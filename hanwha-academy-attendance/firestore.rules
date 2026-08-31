@@ -1,0 +1,49 @@
+rules_version = '2';
+
+// Firestore 보안 규칙 — 한화내일아카데미 출석 시스템
+// -----------------------------------------------------------------------------
+// 1차 구현 정책:
+//  - attendances 컬렉션에 대해 create 는 누구나 가능 (교육생이 익명으로 QR 스캔 후 제출)
+//    다만 문서 구조를 서버측에서 강하게 검증한다.
+//  - read 는 관리자 대시보드가 클라이언트 인증 없이 조회해야 하므로 임시 허용.
+//    // TODO: 운영 강화 시 Firebase Auth 기반으로 read 도 제한할 것
+//  - update, delete 는 전면 금지 (관리자 UI에서도 사용하지 않음)
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    match /attendances/{docId} {
+
+      // 읽기: 임시 허용 (TODO: Firebase Auth 도입 후 관리자만 허용)
+      allow read: if true;
+
+      // 생성 검증
+      allow create: if
+        // 필수 필드 존재
+        request.resource.data.keys().hasAll(['name', 'class', 'date', 'submittedAt']) &&
+
+        // name: 비어있지 않은 문자열, 길이 제한
+        request.resource.data.name is string &&
+        request.resource.data.name.size() > 0 &&
+        request.resource.data.name.size() <= 40 &&
+
+        // class: 허용된 값만
+        request.resource.data.class is string &&
+        (request.resource.data.class in ['A반', 'B반', 'C반']) &&
+
+        // date: 문자열이며 YYYY-MM-DD 형식
+        request.resource.data.date is string &&
+        request.resource.data.date.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$') &&
+
+        // submittedAt: 서버 타임스탬프여야 하며 request.time 과 근접해야 함
+        request.resource.data.submittedAt == request.time;
+
+      // 수정/삭제 금지
+      allow update, delete: if false;
+    }
+
+    // 그 외 모든 경로는 기본 거부
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

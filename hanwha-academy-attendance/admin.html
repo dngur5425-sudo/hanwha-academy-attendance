@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>관리자 대시보드 | 한화내일아카데미</title>
+  <link rel="stylesheet" href="./css/style.css" />
+</head>
+<body class="page-admin">
+  <!-- 인증 가드: DOM 렌더 전에 리다이렉트 -->
+  <script>
+    if (sessionStorage.getItem("hanwha_admin_auth") !== "1") {
+      window.location.replace("./admin-login.html");
+    }
+  </script>
+
+  <header class="admin-header">
+    <div class="container admin-header__inner">
+      <h1>관리자 대시보드</h1>
+      <button type="button" id="logoutBtn" class="btn btn--ghost btn--sm">로그아웃</button>
+    </div>
+  </header>
+
+  <main class="container">
+    <nav class="tabs" role="tablist">
+      <button type="button" class="tab is-active" role="tab" data-tab="qr">QR 생성</button>
+      <button type="button" class="tab" role="tab" data-tab="list">출석 현황</button>
+    </nav>
+
+    <!-- ============ QR 생성 탭 ============ -->
+    <section id="tab-qr" class="tab-panel is-active" role="tabpanel">
+      <div class="card">
+        <h2>출석 QR 생성</h2>
+
+        <div class="grid-2">
+          <div class="field">
+            <label for="qrClassSelect">반</label>
+            <select id="qrClassSelect"></select>
+          </div>
+          <div class="field">
+            <label for="qrDateInput">날짜</label>
+            <input type="date" id="qrDateInput" />
+          </div>
+        </div>
+
+        <button type="button" id="generateQrBtn" class="btn btn--primary">QR 생성</button>
+
+        <div id="qrResult" class="qr-result" hidden>
+          <p class="qr-url-label">출석 URL</p>
+          <code id="qrUrlText" class="qr-url-text"></code>
+          <div id="qrCanvasWrap" class="qr-canvas-wrap"></div>
+          <button type="button" id="downloadQrBtn" class="btn btn--ghost">이미지 다운로드</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 출석 현황 탭 ============ -->
+    <section id="tab-list" class="tab-panel" role="tabpanel" hidden>
+      <div class="card">
+        <h2>출석 현황 조회</h2>
+
+        <div class="grid-2">
+          <div class="field">
+            <label for="listDateInput">날짜</label>
+            <input type="date" id="listDateInput" />
+          </div>
+          <div class="field">
+            <label for="listClassSelect">반</label>
+            <select id="listClassSelect">
+              <option value="__ALL__">전체</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="btn-row">
+          <button type="button" id="queryBtn" class="btn btn--primary">조회</button>
+          <button type="button" id="excelBtn" class="btn btn--ghost">엑셀 다운로드</button>
+          <button type="button" id="excelAllBtn" class="btn btn--ghost">전체 데이터 다운로드</button>
+        </div>
+
+        <p id="listStatus" class="list-status"></p>
+
+        <div class="table-wrap">
+          <table id="attendTable" class="attend-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>이름</th>
+                <th>반</th>
+                <th>제출 시각</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  <!-- QR 코드 라이브러리 -->
+  <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+  <!-- SheetJS -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+  <script src="./js/firebase-config.js"></script>
+  <script src="./js/excel-export.js"></script>
+  <script src="./js/admin-qr.js"></script>
+  <script src="./js/admin-list.js"></script>
+
+  <script>
+    // 탭 전환 + 로그아웃
+    document.addEventListener("DOMContentLoaded", () => {
+      const tabs = document.querySelectorAll(".tab");
+      const panels = {
+        qr: document.getElementById("tab-qr"),
+        list: document.getElementById("tab-list"),
+      };
+      tabs.forEach((tab) => {
+        tab.addEventListener("click", () => {
+          tabs.forEach((t) => t.classList.remove("is-active"));
+          tab.classList.add("is-active");
+          Object.entries(panels).forEach(([key, el]) => {
+            const active = key === tab.dataset.tab;
+            el.classList.toggle("is-active", active);
+            el.hidden = !active;
+          });
+        });
+      });
+
+      document.getElementById("logoutBtn").addEventListener("click", () => {
+        sessionStorage.removeItem("hanwha_admin_auth");
+        window.location.replace("./admin-login.html");
+      });
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,33 @@
+# ─────────────────────────────────────────────
+# 한화내일아카데미 출석 시스템 .gitignore
+# ─────────────────────────────────────────────
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+
+# Node (혹시 도구 사용 시 대비)
+node_modules/
+
+# 환경변수
+.env
+.env.local
+.env.*.local
+
+# Firebase 로컬
+.firebase/
+firebase-debug.log
+firestore-debug.log
+
+# ─────────────────────────────────────────────
+# 참고:
+# js/firebase-config.js 파일에는 Firebase 웹 apiKey 가 들어갑니다.
+# Firebase 웹 SDK 의 apiKey 는 공개되어도 기술적으로는 안전하지만
+# (실제 보안은 Firestore 보안 규칙으로 담당),
+# 프로젝트 정책상 저장소에 노출하고 싶지 않다면 아래 주석을 해제하세요.
+# js/firebase-config.js
+# ─────────────────────────────────────────────

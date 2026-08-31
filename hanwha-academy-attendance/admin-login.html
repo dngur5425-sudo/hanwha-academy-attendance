@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>관리자 로그인 | 한화내일아카데미</title>
+  <link rel="stylesheet" href="./css/style.css" />
+</head>
+<body class="page-login">
+  <main class="container container--narrow">
+    <header class="page-header">
+      <h1>관리자 로그인</h1>
+    </header>
+
+    <form id="loginForm" class="card" novalidate>
+      <div class="field">
+        <label for="pwInput">비밀번호</label>
+        <input type="password" id="pwInput" name="password" autocomplete="current-password" required />
+      </div>
+      <p id="loginError" class="error-msg" role="alert"></p>
+      <button type="submit" class="btn btn--primary btn--block">로그인</button>
+    </form>
+  </main>
+
+  <script src="./js/admin-login.js"></script>
+</body>
+</html>

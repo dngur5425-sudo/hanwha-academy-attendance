@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>출석 체크 | 한화내일아카데미</title>
+  <link rel="stylesheet" href="./css/style.css" />
+</head>
+<body class="page-attend">
+  <main class="container container--narrow">
+    <header class="page-header">
+      <h1>한화내일아카데미 출석</h1>
+      <p class="page-sub" id="dateLabel"></p>
+    </header>
+
+    <form id="attendForm" class="card" novalidate>
+      <div class="field">
+        <label for="nameInput">이름</label>
+        <input type="text" id="nameInput" name="name" placeholder="홍길동" autocomplete="name" required />
+      </div>
+
+      <div class="field">
+        <label for="classSelect">반</label>
+        <select id="classSelect" name="class" required>
+          <!-- attend.js 에서 채움 -->
+        </select>
+      </div>
+
+      <p id="errorMsg" class="error-msg" role="alert"></p>
+
+      <button type="submit" id="submitBtn" class="btn btn--primary btn--block">출석하기</button>
+    </form>
+
+    <section id="doneBox" class="card card--success" hidden>
+      <h2>✅ 출석 완료</h2>
+      <p id="doneMsg"></p>
+    </section>
+
+    <section id="alreadyBox" class="card card--warn" hidden>
+      <h2>ℹ️ 이미 출석 처리되었습니다</h2>
+      <p>이 브라우저에서 오늘 같은 반으로 이미 출석을 제출한 기록이 있습니다.</p>
+      <button type="button" id="submitAgainBtn" class="btn btn--ghost">그래도 다시 제출</button>
+    </section>
+  </main>
+
+  <!-- Firebase SDK (compat) -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  <script src="./js/firebase-config.js"></script>
+  <script src="./js/attend.js"></script>
+</body>
+</html>
