@@ -10,8 +10,8 @@
 //     TODO: attend.js 에 별도의 "퇴실" 제출 흐름을 구현하면 checkOutAt 이 자동으로 채워짐.
 //   schedules/{date}: { startTime: "HH:MM", endTime: "HH:MM", updatedAt }
 
-const LIST_CLASS_OPTIONS = ["A반", "B반", "C반"];
 const ALL_VALUE = "__ALL__";
+let LIST_CLASS_OPTIONS = ["A반", "B반", "C반"]; // config 로드 후 갱신
 
 function todayLocalYMD() {
   const d = new Date();
@@ -110,7 +110,7 @@ function mapDocToRow(doc) {
   };
 }
 
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
   const dateInput = document.getElementById("listDateInput");
   const classSelect = document.getElementById("listClassSelect");
   const queryBtn = document.getElementById("queryBtn");
@@ -118,6 +118,12 @@ document.addEventListener("DOMContentLoaded", () => {
   const excelAllBtn = document.getElementById("excelAllBtn");
   const statusEl = document.getElementById("listStatus");
   const tbody = document.querySelector("#attendTable tbody");
+
+  // config/classNames 로드
+  if (window.classNamesConfig && typeof window.classNamesConfig.load === "function") {
+    const cfg = await window.classNamesConfig.load();
+    LIST_CLASS_OPTIONS = [cfg.class1, cfg.class2, cfg.class3];
+  }
 
   LIST_CLASS_OPTIONS.forEach((c) => {
     const opt = document.createElement("option");
@@ -232,7 +238,7 @@ function renderRows(rows, schedule, tbody) {
   if (!rows.length) {
     const tr = document.createElement("tr");
     const td = document.createElement("td");
-    td.colSpan = 7;
+    td.colSpan = 8;
     td.textContent = "데이터가 없습니다.";
     td.className = "empty-cell";
     tr.appendChild(td);
@@ -243,6 +249,7 @@ function renderRows(rows, schedule, tbody) {
     const { rate, statusText, statusClass } = computeAttendanceStatus(r, schedule);
     const ratePct = rate == null ? "-" : `${Math.floor(rate * 100)}%`;
     const tr = document.createElement("tr");
+    tr.dataset.docId = r.id;
     tr.innerHTML = `
       <td>${i + 1}</td>
       <td>${escapeHtml(r.name)}</td>
@@ -251,9 +258,32 @@ function renderRows(rows, schedule, tbody) {
       <td>${escapeHtml(formatTimeHM(r.checkOutAt))}</td>
       <td>${ratePct}</td>
       <td><span class="status-badge ${statusClass}">${escapeHtml(statusText)}</span></td>
+      <td><button type="button" class="btn btn--ghost btn--sm row-delete-btn">삭제</button></td>
     `;
+    tr.querySelector(".row-delete-btn").addEventListener("click", () => handleDeleteRow(r, tr));
     tbody.appendChild(tr);
   });
+}
+
+async function handleDeleteRow(row, trEl) {
+  const msg = `${row.name}님의 ${row.class} 출석 기록을 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.`;
+  if (!confirm(msg)) return;
+  try {
+    await window.db.collection("attendances").doc(row.id).delete();
+    // 현재 메모리 리스트에서도 제거
+    currentRows = currentRows.filter((x) => x.id !== row.id);
+    trEl.remove();
+    const statusEl = document.getElementById("listStatus");
+    if (statusEl) statusEl.textContent = "삭제되었습니다.";
+    // 행이 전부 사라졌으면 빈 상태 다시 렌더링
+    const tbody = document.querySelector("#attendTable tbody");
+    if (tbody && !tbody.querySelector("tr")) {
+      renderRows([], currentSchedule, tbody);
+    }
+  } catch (err) {
+    console.error(err);
+    alert("삭제 실패: " + (err.message || err.code || ""));
+  }
 }
 
 function escapeHtml(s) {

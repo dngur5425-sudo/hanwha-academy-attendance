@@ -120,32 +120,46 @@ body {
   margin: 4px 0 12px;
 }
 
-/* ---------- 라디오 그룹 (입실/퇴실) ---------- */
+/* ---------- 라디오 그룹 (입실/퇴실) - 박스형 버튼 스타일 ---------- */
 .radio-group {
   display: flex;
-  gap: 8px;
+  gap: 10px;
 }
 .radio-item {
   flex: 1;
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  padding: 12px 10px;
+  min-height: 48px;
+  padding: 12px 14px;
   border: 1px solid var(--color-border);
   border-radius: 8px;
   background: #fff;
+  font-size: 1rem;
   font-weight: 600;
+  color: var(--color-text);
   cursor: pointer;
   user-select: none;
+  text-align: center;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
 }
+/* 실제 라디오 input 은 시각적으로 숨김 (접근성은 유지) */
 .radio-item input[type="radio"] {
-  accent-color: var(--color-primary);
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+.radio-item:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
 }
 .radio-item:has(input:checked) {
+  background: var(--color-primary);
   border-color: var(--color-primary);
-  background: rgba(255, 102, 0, 0.08);
-  color: var(--color-primary);
+  color: #fff;
 }
 
 /* ---------- 버튼 ---------- */

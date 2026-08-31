@@ -1,14 +1,7 @@
 // admin-qr.js — 관리자 QR 생성 기능
 // -----------------------------------------------------------------------------
 // 인증 가드는 admin-auth-guard.js 에서 공통 처리됨.
-
-// attend.js 와 동일한 반 목록 (동기화 필요)
-// TODO: 반 목록이 자주 바뀌면 별도 config 파일로 분리하는 것을 고려
-const QR_CLASS_OPTIONS = [
-  { label: "A반", value: "A" },
-  { label: "B반", value: "B" },
-  { label: "C반", value: "C" },
-];
+// 반 목록은 Firestore config/classNames 에서 로드 (admin-classnames.js 의 loader 재사용).
 
 function todayLocalYMD() {
   const d = new Date();
@@ -19,14 +12,13 @@ function todayLocalYMD() {
 }
 
 function buildAttendUrl(classValue, dateValue) {
-  // 현재 페이지 기준 상대 경로 → attend.html 절대 URL 로 변환
   const base = new URL("./attend.html", window.location.href);
   base.searchParams.set("class", classValue);
   base.searchParams.set("date", dateValue);
   return base.toString();
 }
 
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
   const classSelect = document.getElementById("qrClassSelect");
   const dateInput = document.getElementById("qrDateInput");
   const generateBtn = document.getElementById("generateQrBtn");
@@ -35,18 +27,21 @@ document.addEventListener("DOMContentLoaded", () => {
   const canvasWrap = document.getElementById("qrCanvasWrap");
   const downloadBtn = document.getElementById("downloadQrBtn");
 
-  // 반 select 채우기
-  QR_CLASS_OPTIONS.forEach((c) => {
+  // 반 목록 로드 (config/classNames)
+  let classNames = ["A반", "B반", "C반"];
+  if (window.classNamesConfig && typeof window.classNamesConfig.load === "function") {
+    const cfg = await window.classNamesConfig.load();
+    classNames = [cfg.class1, cfg.class2, cfg.class3];
+  }
+
+  classNames.forEach((name) => {
     const opt = document.createElement("option");
-    opt.value = c.value;
-    opt.textContent = c.label;
+    opt.value = name; // QR URL 에 실제 반 이름 그대로 사용
+    opt.textContent = name;
     classSelect.appendChild(opt);
   });
 
-  // 날짜 기본값 = 오늘
   dateInput.value = todayLocalYMD();
-
-  let qrInstance = null;
 
   generateBtn.addEventListener("click", () => {
     const classValue = classSelect.value;
@@ -55,9 +50,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     urlText.textContent = url;
 
-    // 기존 QR 지우기
     canvasWrap.innerHTML = "";
-    qrInstance = new QRCode(canvasWrap, {
+    new QRCode(canvasWrap, {
       text: url,
       width: 240,
       height: 240,
@@ -68,16 +62,12 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   downloadBtn.addEventListener("click", () => {
-    // qrcodejs 는 내부적으로 <canvas> 또는 <img> 를 생성함
     const canvas = canvasWrap.querySelector("canvas");
     const img = canvasWrap.querySelector("img");
 
     let dataUrl = null;
-    if (canvas) {
-      dataUrl = canvas.toDataURL("image/png");
-    } else if (img) {
-      dataUrl = img.src;
-    }
+    if (canvas) dataUrl = canvas.toDataURL("image/png");
+    else if (img) dataUrl = img.src;
     if (!dataUrl) {
       alert("먼저 QR을 생성해주세요.");
       return;
@@ -85,7 +75,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const classValue = classSelect.value;
     const dateValue = dateInput.value || todayLocalYMD();
-    const filename = `QR_${classValue}반_${dateValue}.png`;
+    const filename = `QR_${classValue}_${dateValue}.png`;
 
     const a = document.createElement("a");
     a.href = dataUrl;

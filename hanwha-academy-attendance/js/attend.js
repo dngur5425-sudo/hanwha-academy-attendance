@@ -5,15 +5,41 @@
 //     name, class, date, checkInAt|null, checkOutAt|null, createdAt, updatedAt
 //   같은 (date, class, name) 조합에 대해 문서는 1개이며,
 //   입실 제출 시 checkInAt, 퇴실 제출 시 checkOutAt 을 채운다.
+//
+// 반 목록은 Firestore config/classNames 문서에서 동적으로 가져온다.
 
-const CLASS_OPTIONS = ["A반", "B반", "C반"];
-// TODO: 실제 반 이름이 다르면 여기 값을 교체하세요.
+const DEFAULT_CLASS_NAMES = ["A반", "B반", "C반"];
+let CLASS_OPTIONS = [...DEFAULT_CLASS_NAMES]; // config 로드 후 갱신
 
-function normalizeClassParam(raw) {
+async function fetchClassNames() {
+  if (!window.db) return [...DEFAULT_CLASS_NAMES];
+  try {
+    const snap = await window.db.collection("config").doc("classNames").get();
+    if (!snap.exists) return [...DEFAULT_CLASS_NAMES];
+    const d = snap.data() || {};
+    return [
+      d.class1 || DEFAULT_CLASS_NAMES[0],
+      d.class2 || DEFAULT_CLASS_NAMES[1],
+      d.class3 || DEFAULT_CLASS_NAMES[2],
+    ];
+  } catch (err) {
+    console.error("[fetchClassNames]", err);
+    return [...DEFAULT_CLASS_NAMES];
+  }
+}
+
+// URL ?class= 파라미터를 실제 옵션에 매칭.
+// 우선 완전 일치, 없으면 "반" 접미사 붙여 재시도 (구 QR 하위호환).
+function normalizeClassParam(raw, options) {
   if (!raw) return null;
   const trimmed = String(raw).trim();
+  if (options.includes(trimmed)) return trimmed;
   const withSuffix = trimmed.endsWith("반") ? trimmed : trimmed + "반";
-  return CLASS_OPTIONS.includes(withSuffix) ? withSuffix : null;
+  if (options.includes(withSuffix)) return withSuffix;
+  // 단축값(A/B/C) → 인덱스 기반 하위호환
+  const idx = { A: 0, B: 1, C: 2 }[trimmed.toUpperCase()];
+  if (idx != null && options[idx]) return options[idx];
+  return null;
 }
 
 function todayLocalYMD() {
@@ -41,7 +67,7 @@ function typeLabel(type) {
   return type === "in" ? "입실" : "퇴실";
 }
 
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
   const form = document.getElementById("attendForm");
   const nameInput = document.getElementById("nameInput");
   const classSelect = document.getElementById("classSelect");
@@ -53,6 +79,9 @@ document.addEventListener("DOMContentLoaded", () => {
   const alreadyBox = document.getElementById("alreadyBox");
   const submitAgainBtn = document.getElementById("submitAgainBtn");
 
+  // 반 이름을 Firestore config 에서 로드
+  CLASS_OPTIONS = await fetchClassNames();
+
   // 반 드롭다운 채우기
   CLASS_OPTIONS.forEach((c) => {
     const opt = document.createElement("option");
@@ -63,7 +92,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // 쿼리 파라미터 처리
   const { classParam, dateParam } = getQuery();
-  const selectedClassFromUrl = normalizeClassParam(classParam);
+  const selectedClassFromUrl = normalizeClassParam(classParam, CLASS_OPTIONS);
   if (selectedClassFromUrl) classSelect.value = selectedClassFromUrl;
 
   const attendanceDate = (dateParam && /^\d{4}-\d{2}-\d{2}$/.test(dateParam))
