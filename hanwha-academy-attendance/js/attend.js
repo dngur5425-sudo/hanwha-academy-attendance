@@ -63,6 +63,12 @@ function localStorageKey(date, className, name, type) {
   return `attend:${date}:${className}:${name}:${type}`;
 }
 
+// Firestore 문서 ID: (date + class + name) 조합의 고정 ID
+// - encodeURIComponent 로 슬래시 등 문서 ID 금지 문자 회피
+function buildDocId(date, className, name) {
+  return `${date}_${encodeURIComponent(className)}_${encodeURIComponent(name)}`;
+}
+
 function typeLabel(type) {
   return type === "in" ? "입실" : "퇴실";
 }
@@ -161,17 +167,13 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     try {
       const col = window.db.collection("attendances");
-      const q = await col
-        .where("date", "==", attendanceDate)
-        .where("class", "==", className)
-        .where("name", "==", name)
-        .limit(1)
-        .get();
+      const docRef = col.doc(buildDocId(attendanceDate, className, name));
+      const snap = await docRef.get();
 
       const serverTs = firebase.firestore.FieldValue.serverTimestamp;
       let extraNote = "";
 
-      if (q.empty) {
+      if (!snap.exists) {
         // 새 문서 생성 — 선택한 type 만 값 채움, 나머지는 null
         const payload = {
           name,
@@ -182,20 +184,19 @@ document.addEventListener("DOMContentLoaded", async () => {
           createdAt: serverTs(),
           updatedAt: serverTs(),
         };
-        await col.add(payload);
+        await docRef.set(payload);
 
         if (type === "out") {
           extraNote = " 다만 입실 기록이 없어 출석률 계산 시 불인정으로 처리될 수 있습니다.";
         }
       } else {
-        const doc = q.docs[0];
-        const data = doc.data();
+        const data = snap.data();
         const hasIn = !!data.checkInAt;
         const hasOut = !!data.checkOutAt;
 
         if (type === "in" && hasIn && !forceOverwrite) {
           submitBtn.disabled = false;
-          submitBtn.textContent = "출석하기";
+          submitBtn.textContent = "제출하기";
           alreadyBox.hidden = false;
           alreadyBox.querySelector("p").textContent =
             "이미 입실 처리되었습니다. 그래도 다시 제출하시겠어요?";
@@ -203,7 +204,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
         if (type === "out" && hasOut && !forceOverwrite) {
           submitBtn.disabled = false;
-          submitBtn.textContent = "출석하기";
+          submitBtn.textContent = "제출하기";
           alreadyBox.hidden = false;
           alreadyBox.querySelector("p").textContent =
             "이미 퇴실 처리되었습니다. 그래도 다시 제출하시겠어요?";
@@ -215,7 +216,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         if (type === "in") updatePayload.checkInAt = serverTs();
         else updatePayload.checkOutAt = serverTs();
 
-        await doc.ref.update(updatePayload);
+        await docRef.set(updatePayload, { merge: true });
 
         if (type === "out" && !hasIn) {
           extraNote = " 다만 입실 기록이 없어 출석률 계산 시 불인정으로 처리될 수 있습니다.";
