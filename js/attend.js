@@ -195,7 +195,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         if (type === "in" && hasIn && !forceOverwrite) {
           submitBtn.disabled = false;
-          submitBtn.textContent = "출석하기";
+          submitBtn.textContent = "제출하기";
           alreadyBox.hidden = false;
           alreadyBox.querySelector("p").textContent =
             "이미 입실 처리되었습니다. 그래도 다시 제출하시겠어요?";
@@ -203,7 +203,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
         if (type === "out" && hasOut && !forceOverwrite) {
           submitBtn.disabled = false;
-          submitBtn.textContent = "출석하기";
+          submitBtn.textContent = "제출하기";
           alreadyBox.hidden = false;
           alreadyBox.querySelector("p").textContent =
             "이미 퇴실 처리되었습니다. 그래도 다시 제출하시겠어요?";
@@ -232,11 +232,12 @@ document.addEventListener("DOMContentLoaded", async () => {
       alreadyBox.hidden = true;
       doneBox.hidden = false;
       doneMsg.textContent = `${name}님, ${className} ${typeLabel(type)}이 완료되었습니다.${extraNote}`;
-    } catch (err) {
+        } catch (err) {
       console.error(err);
-      errorMsg.textContent = "제출 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.";
+      const detail = (err && (err.message || err.code)) || String(err);
+      errorMsg.textContent = `제출 중 오류가 발생했습니다: ${detail}`;
       submitBtn.disabled = false;
-      submitBtn.textContent = "출석하기";
+      submitBtn.textContent = "제출하기";
       forceOverwrite = false;
     }
   });
