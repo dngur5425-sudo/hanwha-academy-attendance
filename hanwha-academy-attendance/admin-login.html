@@ -14,14 +14,23 @@
 
     <form id="loginForm" class="card" novalidate>
       <div class="field">
+        <label for="emailInput">이메일</label>
+        <input type="email" id="emailInput" name="email" autocomplete="username" required />
+      </div>
+      <div class="field">
         <label for="pwInput">비밀번호</label>
         <input type="password" id="pwInput" name="password" autocomplete="current-password" required />
       </div>
       <p id="loginError" class="error-msg" role="alert"></p>
-      <button type="submit" class="btn btn--primary btn--block">로그인</button>
+      <button type="submit" id="loginBtn" class="btn btn--primary btn--block">로그인</button>
     </form>
   </main>
 
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  <script src="./js/firebase-config.js"></script>
   <script src="./js/admin-login.js"></script>
 </body>
 </html>

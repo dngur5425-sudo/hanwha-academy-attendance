@@ -28,3 +28,7 @@ if (!window.firebase) {
 
 // 다른 스크립트에서 window.db 로 Firestore 인스턴스에 접근
 window.db = window.firebase ? firebase.firestore() : null;
+
+// 다른 스크립트에서 window.auth 로 Firebase Auth 인스턴스에 접근
+// (Firebase Authentication - 이메일/비밀번호 로그인 사용)
+window.auth = window.firebase ? firebase.auth() : null;

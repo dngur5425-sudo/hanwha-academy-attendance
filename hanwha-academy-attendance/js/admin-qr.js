@@ -1,9 +1,6 @@
 // admin-qr.js — 관리자 QR 생성 기능
 // -----------------------------------------------------------------------------
-// 인증 가드
-if (sessionStorage.getItem("hanwha_admin_auth") !== "1") {
-  window.location.replace("./admin-login.html");
-}
+// 인증 가드는 admin-auth-guard.js 에서 공통 처리됨.
 
 // attend.js 와 동일한 반 목록 (동기화 필요)
 // TODO: 반 목록이 자주 바뀌면 별도 config 파일로 분리하는 것을 고려

@@ -1,8 +1,6 @@
 // admin-list.js — 출석 현황 조회 + 엑셀 다운로드
 // -----------------------------------------------------------------------------
-if (sessionStorage.getItem("hanwha_admin_auth") !== "1") {
-  window.location.replace("./admin-login.html");
-}
+// 인증 가드는 admin-auth-guard.js 에서 공통 처리됨.
 
 const LIST_CLASS_OPTIONS = ["A반", "B반", "C반"];
 const ALL_VALUE = "__ALL__";

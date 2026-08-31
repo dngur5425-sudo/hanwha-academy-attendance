@@ -7,13 +7,6 @@
   <link rel="stylesheet" href="./css/style.css" />
 </head>
 <body class="page-admin">
-  <!-- 인증 가드: DOM 렌더 전에 리다이렉트 -->
-  <script>
-    if (sessionStorage.getItem("hanwha_admin_auth") !== "1") {
-      window.location.replace("./admin-login.html");
-    }
-  </script>
-
   <header class="admin-header">
     <div class="container admin-header__inner">
       <h1>관리자 대시보드</h1>
@@ -99,6 +92,7 @@
 
   <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
   <!-- QR 코드 라이브러리 -->
   <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
@@ -106,6 +100,8 @@
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
   <script src="./js/firebase-config.js"></script>
+  <!-- 인증 가드는 다른 admin 스크립트보다 먼저 로드 -->
+  <script src="./js/admin-auth-guard.js"></script>
   <script src="./js/excel-export.js"></script>
   <script src="./js/admin-qr.js"></script>
   <script src="./js/admin-list.js"></script>
@@ -131,8 +127,13 @@
       });
 
       document.getElementById("logoutBtn").addEventListener("click", () => {
-        sessionStorage.removeItem("hanwha_admin_auth");
-        window.location.replace("./admin-login.html");
+        if (window.auth) {
+          window.auth.signOut().finally(() => {
+            window.location.replace("./admin-login.html");
+          });
+        } else {
+          window.location.replace("./admin-login.html");
+        }
       });
     });
   </script>

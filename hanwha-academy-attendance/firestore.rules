@@ -5,16 +5,15 @@ rules_version = '2';
 // 1차 구현 정책:
 //  - attendances 컬렉션에 대해 create 는 누구나 가능 (교육생이 익명으로 QR 스캔 후 제출)
 //    다만 문서 구조를 서버측에서 강하게 검증한다.
-//  - read 는 관리자 대시보드가 클라이언트 인증 없이 조회해야 하므로 임시 허용.
-//    // TODO: 운영 강화 시 Firebase Auth 기반으로 read 도 제한할 것
+//  - read 는 관리자만 가능 (Firebase Authentication 로그인 필요).
 //  - update, delete 는 전면 금지 (관리자 UI에서도 사용하지 않음)
 service cloud.firestore {
   match /databases/{database}/documents {
 
     match /attendances/{docId} {
 
-      // 읽기: 임시 허용 (TODO: Firebase Auth 도입 후 관리자만 허용)
-      allow read: if true;
+      // 관리자만 읽기 가능 (Firebase Authentication 기반)
+      allow read: if request.auth != null;
 
       // 생성 검증
       allow create: if

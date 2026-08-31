@@ -59,16 +59,19 @@ hanwha-academy-attendance/
 
 ---
 
-## 2. 관리자 비밀번호 설정
+## 2. Firebase Authentication 관리자 계정 설정
 
-`js/admin-login.js` 상단의 상수를 원하는 값으로 바꾸세요.
+관리자 로그인은 **Firebase Authentication (이메일/비밀번호)** 로 동작합니다.
 
-```js
-const ADMIN_PASSWORD = "hanwha2026"; // TODO: 운영 배포 전 반드시 변경
-```
+1. Firebase 콘솔 > **Build > Authentication** > **시작하기**.
+2. **Sign-in method** 탭 → **이메일/비밀번호** 제공업체 클릭 → **사용 설정** ON → 저장.
+3. **Users** 탭 → **사용자 추가** 버튼 클릭 → 관리자 이메일/비밀번호 입력 → 추가.
+   - 예: `admin@hanwha-academy.local` / 강력한 비밀번호
+   - 필요 시 여러 관리자를 모두 등록 가능.
+4. 이후 `admin-login.html` 에서 해당 이메일/비밀번호로 로그인하면 대시보드에 진입합니다.
 
-> ⚠ 이 방식은 배포된 JS에 비밀번호가 그대로 들어갑니다.
-> 실제 운영 환경에서는 **Firebase Authentication** 으로 교체하는 것을 권장합니다.
+> 비밀번호를 잃어버렸다면 Firebase 콘솔 Users 탭에서 재설정하거나 계정을 새로 만드세요.
+> 관리자 계정은 Firestore 읽기 권한을 갖게 되므로(규칙 참조) 외부에 공유하지 마세요.
 
 ---
 
@@ -165,7 +168,7 @@ Firestore `attendances/{autoId}`:
 
 ## 8. 알려진 제한 사항 / TODO
 
-- 관리자 인증이 클라이언트 상수 비교이므로 실제 보안 강도는 낮음 → Firebase Auth 로 교체 권장.
-- Firestore `read` 규칙이 현재 전체 공개 상태 → Auth 도입 후 관리자만 허용하도록 강화 필요.
+- ✅ 관리자 인증: Firebase Authentication (이메일/비밀번호) 적용 완료.
+- ✅ Firestore `read` 규칙: `request.auth != null` 으로 제한 완료 (로그인한 관리자만 조회).
 - 동일 사용자가 다른 브라우저에서 반복 제출하는 것은 막지 않음 (localStorage 는 UX 목적).
 - 반 목록 변경 시 여러 파일을 동시에 수정해야 함 (config 통합 개선 여지).
