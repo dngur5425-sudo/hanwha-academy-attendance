@@ -15,29 +15,80 @@ service cloud.firestore {
       // 관리자만 읽기 가능 (Firebase Authentication 기반)
       allow read: if request.auth != null;
 
-      // 생성 검증
+      // 생성: 입실 또는 퇴실 중 정확히 하나만 request.time 으로 채워진 상태여야 함
       allow create: if
-        // 필수 필드 존재
-        request.resource.data.keys().hasAll(['name', 'class', 'date', 'submittedAt']) &&
+        request.resource.data.keys().hasAll(
+          ['name', 'class', 'date', 'checkInAt', 'checkOutAt', 'createdAt', 'updatedAt']
+        ) &&
 
-        // name: 비어있지 않은 문자열, 길이 제한
+        // name
         request.resource.data.name is string &&
         request.resource.data.name.size() > 0 &&
         request.resource.data.name.size() <= 40 &&
 
-        // class: 허용된 값만
+        // class
         request.resource.data.class is string &&
         (request.resource.data.class in ['A반', 'B반', 'C반']) &&
 
-        // date: 문자열이며 YYYY-MM-DD 형식
+        // date
         request.resource.data.date is string &&
         request.resource.data.date.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$') &&
 
-        // submittedAt: 서버 타임스탬프여야 하며 request.time 과 근접해야 함
-        request.resource.data.submittedAt == request.time;
+        // createdAt / updatedAt
+        request.resource.data.createdAt == request.time &&
+        request.resource.data.updatedAt == request.time &&
 
-      // 수정/삭제 금지
-      allow update, delete: if false;
+        // checkInAt / checkOutAt : 정확히 하나만 request.time 이고 다른 하나는 null
+        (
+          (request.resource.data.checkInAt == request.time &&
+           request.resource.data.checkOutAt == null) ||
+          (request.resource.data.checkOutAt == request.time &&
+           request.resource.data.checkInAt == null)
+        );
+
+      // 업데이트: 나머지 하나의 시각을 채우는 경우 (혹은 재제출 시 request.time 으로 덮어쓰기)
+      // - name, class, date 는 변경 금지
+      // - updatedAt == request.time
+      // - 두 케이스 중 하나:
+      //     (A) checkInAt 을 request.time 으로 세팅 & checkOutAt 은 기존 값 유지
+      //     (B) checkOutAt 을 request.time 으로 세팅 & checkInAt 은 기존 값 유지
+      allow update: if
+        request.resource.data.name == resource.data.name &&
+        request.resource.data.class == resource.data.class &&
+        request.resource.data.date == resource.data.date &&
+        request.resource.data.updatedAt == request.time &&
+        (
+          (
+            // (A) 입실 재/신규 기록: checkInAt 은 request.time, checkOutAt 은 기존 그대로
+            request.resource.data.checkInAt == request.time &&
+            request.resource.data.checkOutAt == resource.data.checkOutAt
+          ) ||
+          (
+            // (B) 퇴실 재/신규 기록: checkOutAt 은 request.time, checkInAt 은 기존 그대로
+            request.resource.data.checkOutAt == request.time &&
+            request.resource.data.checkInAt == resource.data.checkInAt
+          )
+        );
+
+      // 삭제 금지
+      allow delete: if false;
+    }
+
+    // schedules/{YYYY-MM-DD} : 날짜별 교육 시간표 (3개 반 공통)
+    // - read/create/update: 관리자만 (Firebase Auth 로그인 필요)
+    // - delete: 금지 (덮어쓰기 방식으로 수정)
+    match /schedules/{dateId} {
+      allow read: if request.auth != null;
+
+      allow create, update: if
+        request.auth != null &&
+        request.resource.data.keys().hasAll(['startTime', 'endTime']) &&
+        request.resource.data.startTime is string &&
+        request.resource.data.startTime.matches('^[0-9]{2}:[0-9]{2}$') &&
+        request.resource.data.endTime is string &&
+        request.resource.data.endTime.matches('^[0-9]{2}:[0-9]{2}$');
+
+      allow delete: if false;
     }
 
     // 그 외 모든 경로는 기본 거부

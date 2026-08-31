@@ -26,6 +26,18 @@
         </select>
       </div>
 
+      <div class="field">
+        <label>구분</label>
+        <div class="radio-group" role="radiogroup" aria-label="입실 또는 퇴실">
+          <label class="radio-item">
+            <input type="radio" name="type" value="in" /> <span>입실</span>
+          </label>
+          <label class="radio-item">
+            <input type="radio" name="type" value="out" /> <span>퇴실</span>
+          </label>
+        </div>
+      </div>
+
       <p id="errorMsg" class="error-msg" role="alert"></p>
 
       <button type="submit" id="submitBtn" class="btn btn--primary btn--block">출석하기</button>

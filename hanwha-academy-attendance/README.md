@@ -145,11 +145,13 @@ npx serve hanwha-academy-attendance
 
 ## 6. 사용 흐름
 
-1. 관리자가 `admin-login.html` 접속 → 비밀번호 입력.
-2. **QR 생성** 탭에서 반/날짜 선택 → QR 생성 → 강의실 화면에 표시 또는 이미지 다운로드.
-3. 교육생이 스마트폰으로 QR 스캔 → `attend.html?class=A&date=2026-08-31` 접속.
-4. 이름 입력 후 **출석하기** → Firestore `attendances` 컬렉션에 저장.
-5. 관리자가 **출석 현황** 탭에서 날짜/반으로 조회 → 표 확인 → 필요 시 엑셀 다운로드.
+1. 관리자가 `admin-login.html` 접속 → 이메일/비밀번호 입력.
+2. **교육 시간 설정** 탭에서 오늘 날짜의 시작/종료 시간을 먼저 등록.
+   > ⚠ 매 교육일마다 반드시 먼저 등록해야 출석률이 정상 계산됩니다. (3개 반 공통)
+3. **QR 생성** 탭에서 반/날짜 선택 → QR 생성 → 강의실 화면에 표시 또는 이미지 다운로드.
+4. 교육생이 스마트폰으로 QR 스캔 → `attend.html?class=A&date=2026-08-31` 접속.
+5. 이름 입력 후 **출석하기** → Firestore `attendances` 컴렉션에 저장.
+6. 관리자가 **출석 현황** 탭에서 날짜/반으로 조회 → 입/퇴실시각, 출석률, 상태 확인 → 필요 시 엑셀 다운로드.
 
 ---
 
@@ -157,12 +159,32 @@ npx serve hanwha-academy-attendance
 
 Firestore `attendances/{autoId}`:
 
-| 필드 | 타입 | 예시 |
+| 필드 | 타입 | 설명 / 예시 |
 |---|---|---|
 | `name` | string | `"홍길동"` |
 | `class` | string | `"A반"` |
 | `date` | string (`YYYY-MM-DD`) | `"2026-08-31"` |
-| `submittedAt` | Timestamp (server) | serverTimestamp |
+| `checkInAt` | Timestamp \| null | 입실시각 (입실 제출 전이면 `null`) |
+| `checkOutAt` | Timestamp \| null | 퇴실시각 (퇴실 제출 전이면 `null`) |
+| `createdAt` | Timestamp (server) | 문서 최초 생성 시각 |
+| `updatedAt` | Timestamp (server) | 마지막 수정 시각 |
+
+> 같은 `(date, class, name)` 조합에 대해 문서는 1개이며,
+> 입실 제출 시 `checkInAt`, 퇴실 제출 시 `checkOutAt` 을 채운다 (upsert).
+
+Firestore `schedules/{YYYY-MM-DD}` (날짜별 교육 시간표, 3개 반 공통):
+
+| 필드 | 타입 | 예시 |
+|---|---|---|
+| `startTime` | string (`HH:MM`) | `"09:00"` |
+| `endTime` | string (`HH:MM`) | `"18:00"` |
+| `updatedAt` | Timestamp (server) | serverTimestamp |
+
+**출석률 계산 규칙**:
+- 실제출석시간 = `min(퇴실, endTime) - max(입실, startTime)` (분)
+- 전체교육시간 = `endTime - startTime` (분)
+- 출석률 ≥ 80% → **정상출석**, 미만 또는 입/퇴실 중 하나 없음 → **불인정**.
+- 해당 날짜의 `schedules` 문서가 없으면 계산 불가 → "시간표 미설정" 표시.
 
 ---
 
